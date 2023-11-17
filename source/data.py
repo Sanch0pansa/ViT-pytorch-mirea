@@ -25,9 +25,6 @@ class CIFAR100DataModule(L.LightningDataModule):
         self.num_classes = 10
         BATCH_SIZE = 4
 
-        classes = ('plane', 'car', 'bird', 'cat',
-           'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
     def prepare_data(self):
         # download
         CIFAR100(self.data_dir, train=True, download=True)
