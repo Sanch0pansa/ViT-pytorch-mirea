@@ -22,7 +22,7 @@ class CIFAR100DataModule(L.LightningDataModule):
         )
 
         self.dims = (3, 32, 32)
-        self.num_classes = 10
+        self.num_classes = 100
         BATCH_SIZE = 4
 
     def prepare_data(self):
@@ -48,5 +48,5 @@ class CIFAR100DataModule(L.LightningDataModule):
         return DataLoader(self.cifar_val, batch_size=BATCH_SIZE)
 
     def test_dataloader(self):
-        self.logger = wandb.Logger()
+        #self.logger = wandb.Logger()
         return DataLoader(self.cifar_test, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
