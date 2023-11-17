@@ -11,10 +11,10 @@ class MLP(nn.Module):
 
         # Linear Layers
         self.nn = nn.Sequential(
-            nn.Linear(in_features=in_features, out_features=hidden_features),
+            nn.Linear(in_features=in_features, out_features=int(hidden_features)),
             nn.ReLU(),
             nn.Dropout(p=drop),
-            nn.Linear(in_features=hidden_features, out_features=out_features),
+            nn.Linear(in_features=int(hidden_features), out_features=out_features),
             nn.ReLU(),
             nn.Dropout(p=drop),
         )
