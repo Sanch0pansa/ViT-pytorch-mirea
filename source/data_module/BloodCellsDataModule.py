@@ -10,8 +10,8 @@ from source.data_module.BloodCellsDataset import BloodCellsDataset
 
 # Note - you must have torchvision installed for this example
 
-PATH_DATASETS = os.environ.get("PATH_DATASETS", "./data")
-BATCH_SIZE = 256 if torch.cuda.is_available() else 64
+PATH_DATASETS = os.environ.get("PATH_DATASETS", "./data/data")
+BATCH_SIZE = 64 if torch.cuda.is_available() else 16
 
 
 class BloodCellsDataModule(L.LightningDataModule):
@@ -45,11 +45,10 @@ class BloodCellsDataModule(L.LightningDataModule):
         )
 
         self.dims = (3, 32, 32)
-        self.num_classes = 10
+        self.num_classes = 4
 
     def prepare_data(self):
-        torchvision.datasets.CIFAR10(self.data_dir, train=True, download=True)
-        torchvision.datasets.CIFAR10(self.data_dir, train=False, download=True)
+        pass
 
     def setup(self, stage=None):
         classes = ["EOSINOPHIL", "LYMPHOCYTE", "MONOCYTE", "NEUTROPHIL"]
@@ -66,23 +65,20 @@ class BloodCellsDataModule(L.LightningDataModule):
          range(len(classes))]
         correct_test_images_filepaths = [i for i in images_filepaths if cv2.imread(i) is not None]
 
-        if stage == "fit" or stage is None:
-            self.train_dataset = BloodCellsDataset(images_filepaths=correct_train_images_filepaths,
-                                                   transform=self.train_transform)
-        if stage == "test" or stage is None:
-            self.test_dataset = BloodCellsDataset(images_filepaths=correct_test_images_filepaths,
-                                                  transform=self.test_transform)
+        self.test_dataset = BloodCellsDataset(images_filepaths=correct_test_images_filepaths,
+                                              transform=self.test_transform)
+
+        train_dataset = BloodCellsDataset(images_filepaths=correct_train_images_filepaths,
+                                          transform=self.train_transform)
+        self.train_dataset, self.val_dataset = torch.utils.data.random_split(train_dataset, [9000, 957])
 
     def train_dataloader(self):
-        return torch.utils.data.DataLoader(self.train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4,
-                                           pin_memory=True, )
+        return torch.utils.data.DataLoader(self.train_dataset, batch_size=BATCH_SIZE)
 
     def val_dataloader(self):
-        return torch.utils.data.DataLoader(self.test_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4,
-                                           pin_memory=True, )
+        return torch.utils.data.DataLoader(self.val_dataset, batch_size=BATCH_SIZE)
 
     def test_dataloader(self):
-        return torch.utils.data.DataLoader(self.test_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4,
-                                           pin_memory=True, )
+        return torch.utils.data.DataLoader(self.test_dataset, batch_size=BATCH_SIZE)
 
 
