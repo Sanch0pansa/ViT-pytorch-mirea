@@ -15,15 +15,13 @@ class MLP(nn.Module):
             nn.ReLU(),
             nn.Dropout(p=drop),
             nn.Linear(in_features=int(hidden_features), out_features=out_features),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Dropout(p=drop),
         )
 
         # Activation(s)
-        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.nn(x)
-        x = self.relu(x)
 
         return x
