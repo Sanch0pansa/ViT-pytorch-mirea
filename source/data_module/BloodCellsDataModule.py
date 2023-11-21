@@ -11,7 +11,7 @@ from source.data_module.BloodCellsDataset import BloodCellsDataset
 # Note - you must have torchvision installed for this example
 
 PATH_DATASETS = os.environ.get("PATH_DATASETS", "./data/data")
-BATCH_SIZE = 64 if torch.cuda.is_available() else 16
+BATCH_SIZE = 128 if torch.cuda.is_available() else 16
 
 
 class BloodCellsDataModule(L.LightningDataModule):
@@ -29,10 +29,11 @@ class BloodCellsDataModule(L.LightningDataModule):
                     A.RandomBrightnessContrast(),
                     A.RGBShift(),
                 ], p=1),
-
+                A.Rotate(limit=30, interpolation=cv2.INTER_LINEAR),
+                A.HorizontalFlip(p=0.5),
+                A.VerticalFlip(p=0.5),
                 A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-                # нормализация с теми же значениями, как предобрабатывались изображения набора данных ImageNet в предобученной нейронной сети
-                ToTensorV2(),  # перевод к формату тензора для pytorch
+                ToTensorV2(),
             ]
         )
         self.test_transform = A.Compose(  # с тестовым набором минимум трансформаций
@@ -70,13 +71,26 @@ class BloodCellsDataModule(L.LightningDataModule):
 
         train_dataset = BloodCellsDataset(images_filepaths=correct_train_images_filepaths,
                                           transform=self.train_transform)
-        self.train_dataset, self.val_dataset = torch.utils.data.random_split(train_dataset, [9000, 957])
+        # Augmented datasets
+        augmented_datasets = []
+        for _ in range(3):  # You can adjust the number of augmentations as needed
+            augmented_datasets.append(
+                BloodCellsDataset(images_filepaths=correct_train_images_filepaths,
+                                  transform=self.train_transform)
+            )
+
+        # Concatenate datasets
+        train_dataset = torch.utils.data.ConcatDataset([train_dataset] + augmented_datasets)
+        self.val_dataset, self.train_dataset = torch.utils.data.random_split(train_dataset, [1000, len(train_dataset) - 1000])
+        print(len(self.train_dataset))
+
+        # self.train_dataset, self.val_dataset = torch.utils.data.random_split(train_dataset, [9000, 957])
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(self.train_dataset, batch_size=BATCH_SIZE)
 
     def val_dataloader(self):
-        return torch.utils.data.DataLoader(self.val_dataset, batch_size=BATCH_SIZE)
+        return torch.utils.data.DataLoader(self.test_dataset, batch_size=BATCH_SIZE)
 
     def test_dataloader(self):
         return torch.utils.data.DataLoader(self.test_dataset, batch_size=BATCH_SIZE)
