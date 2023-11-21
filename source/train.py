@@ -4,7 +4,7 @@ from source.data_module.BloodCellsDataModule import BloodCellsDataModule
 from source.model.ViT import ViT
 from lightning.pytorch.callbacks import ModelCheckpoint
 
-wandb_logger = L.pytorch.loggers.WandbLogger(project="ViT")
+wandb_logger = L.pytorch.loggers.WandbLogger(project="ViT", name="Vit-D6-H12-E768", log_model="all")
 
 dm = BloodCellsDataModule()
 model = ViT(num_classes=dm.num_classes)
