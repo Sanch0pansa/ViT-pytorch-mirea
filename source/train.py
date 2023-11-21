@@ -31,7 +31,8 @@ trainer = L.Trainer(
     accelerator="auto",
     devices=1,
     logger=wandb_logger,
-    callbacks=[checkpoint_callback]
+    callbacks=[checkpoint_callback],
+    log_every_n_steps=10
 )
 trainer.fit(model, dm)
 torch.save(model.state_dict(), "nets/nn1.pth")
