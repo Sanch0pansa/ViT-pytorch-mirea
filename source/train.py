@@ -4,7 +4,19 @@ from source.data_module.BloodCellsDataModule import BloodCellsDataModule
 from source.model.ViT import ViT
 from lightning.pytorch.callbacks import ModelCheckpoint
 
-wandb_logger = L.pytorch.loggers.WandbLogger(project="ViT", name="Vit-D6-H12-E768", log_model="all")
+EPOCHS = 5
+
+wandb_logger = L.pytorch.loggers.WandbLogger(
+    project="ViT",
+    name="Vit-D6-H12-E768",
+    log_model="all",
+    config={
+        "learning_rate": 0.00001,
+        "architecture": "Vit-D6-H12-E768",
+        "dataset": "BloodCells",
+        "epochs": EPOCHS,
+    }
+)
 
 dm = BloodCellsDataModule()
 model = ViT(num_classes=dm.num_classes)
@@ -12,10 +24,10 @@ checkpoint_callback = ModelCheckpoint(dirpath='model-chkp/')
 # early_stopping = EarlyStopping('val_loss')
 
 # log gradients, parameter histogram and model topology
-wandb_logger.watch(model, log_freq=1)
+wandb_logger.watch(model, log_graph=False)
 # model.load_state_dict(torch.load(from_load))
 trainer = L.Trainer(
-    max_epochs=5,
+    max_epochs=EPOCHS,
     accelerator="auto",
     devices=1,
     logger=wandb_logger,
