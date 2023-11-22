@@ -20,8 +20,7 @@ class BloodCellsDataModule(L.LightningDataModule):
         self.data_dir = data_dir
         self.train_transform = A.Compose(  # набор трансформаций для тренировочного набора
             [
-                A.SmallestMaxSize(max_size=256),
-                A.RandomCrop(height=224, width=224),
+                A.Resize(width=224, height=224),
                 # добавить несколько трансформаций по своему выбору
                 A.OneOf([  # делает только один вид преобразования из списка
                     A.Blur(),
@@ -38,8 +37,7 @@ class BloodCellsDataModule(L.LightningDataModule):
         )
         self.test_transform = A.Compose(  # с тестовым набором минимум трансформаций
             [
-                A.SmallestMaxSize(max_size=256),
-                A.CenterCrop(224, 224),
+                A.Resize(width=224, height=224),
                 A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
                 ToTensorV2(),
             ]
@@ -73,7 +71,7 @@ class BloodCellsDataModule(L.LightningDataModule):
                                           transform=self.train_transform)
         # Augmented datasets
         augmented_datasets = []
-        for _ in range(3):  # You can adjust the number of augmentations as needed
+        for _ in range(7):  # You can adjust the number of augmentations as needed
             augmented_datasets.append(
                 BloodCellsDataset(images_filepaths=correct_train_images_filepaths,
                                   transform=self.train_transform)
