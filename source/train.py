@@ -2,25 +2,68 @@ import torch
 import lightning as L
 from source.data_module.BloodCellsDataModule import BloodCellsDataModule
 from source.model.ViT import ViT
+from lightning.pytorch.callbacks import ModelCheckpoint
+
+EPOCHS = 5
 
 
+def train(
+        depth=4,
+        num_heads=16,
+        embed_dim=256,
+        comment="",
+        filename_postfix="",
+        epochs=5,
+        learning_rate=0.001,
+        dataset_name="BloodCells+Augmentations",
+        drop_rate=0.3,
 
-wandb_logger = L.pytorch.loggers.WandbLogger(project="ViT", log_model="all")
+        load_from_net="",
+        load_from_checkpoint=""
+):
+    architecture = f"Vit-D{depth}-H{num_heads}-E{embed_dim}"
+    run_name = f"Vit-D{depth}-H{num_heads}-E{embed_dim}{'-' + comment if comment != '' else ''}"
+    filename = f"../nets/{run_name}{'-' + filename_postfix if filename_postfix != '' else ''}.pth"
+    wandb_logger = L.pytorch.loggers.WandbLogger(
+        project="ViT",
+        name=run_name,
+        log_model="all",
+        config={
+            "learning_rate": learning_rate,
+            "architecture": architecture,
+            "dataset": dataset_name,
+            "epochs": epochs,
+        }
+    )
 
-dm = BloodCellsDataModule()
-model = ViT(num_classes=dm.num_classes)
-# checkpoint_callback = ModelCheckpoint(dirpath='model-chkp/')
-# early_stopping = EarlyStopping('val_loss')
+    dm = BloodCellsDataModule()
+    if load_from_checkpoint:
+        model = ViT.load_from_checkpoint(f"./model-chkp/{load_from_checkpoint}")
 
-# log gradients, parameter histogram and model topology
-wandb_logger.watch(model, log="all")
-# model.load_state_dict(torch.load(from_load))
-trainer = L.Trainer(
-    max_epochs=5,
-    accelerator="auto",
-    devices=1,
-    logger=wandb_logger,
-    # callbacks=[checkpoint_callback, early_stopping]
-)
-trainer.fit(model, dm)
-torch.save(model.state_dict(), "nn.pth")
+    else:
+        model = ViT(
+            num_classes=dm.num_classes,
+            depth=depth,
+            embed_dim=embed_dim,
+            num_heads=num_heads,
+            learning_rate=learning_rate,
+            drop_rate=drop_rate
+        )
+
+        if load_from_net:
+            model.load_state_dict(torch.load(load_from_net))
+
+    checkpoint_callback = ModelCheckpoint(dirpath='model-chkp/')
+    trainer = L.Trainer(
+        max_epochs=epochs,
+        accelerator="auto",
+        devices=1,
+        logger=wandb_logger,
+        callbacks=[checkpoint_callback],
+        log_every_n_steps=10
+    )
+    trainer.fit(model, dm)
+    torch.save(model.state_dict(), filename)
+
+
+train(depth=6, embed_dim=128, num_heads=8, comment="SGD", epochs=7, learning_rate=0.0001)

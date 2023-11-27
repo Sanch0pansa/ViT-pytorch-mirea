@@ -69,6 +69,8 @@ class ViT(L.LightningModule):
         self.log("val_acc", acc, prog_bar=True)
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.learning_rate, betas=(0.5, 0.999))
+        # optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, betas=(0.5, 0.999))
+        optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
 
-        # return torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
+        scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
+        return [optimizer], [scheduler]
