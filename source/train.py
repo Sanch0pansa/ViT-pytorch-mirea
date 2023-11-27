@@ -4,23 +4,36 @@ from source.data_module.BloodCellsDataModule import BloodCellsDataModule
 from source.model.ViT import ViT
 from lightning.pytorch.callbacks import ModelCheckpoint
 
-EPOCHS = 5
-
 
 def train(
-        depth=4,
-        num_heads=16,
-        embed_dim=256,
-        comment="",
-        filename_postfix="",
-        epochs=5,
-        learning_rate=0.001,
-        dataset_name="BloodCells+Augmentations",
-        drop_rate=0.3,
-
-        load_from_net="",
-        load_from_checkpoint=""
+        depth: int = 4,
+        num_heads: int = 16,
+        embed_dim: int = 256,
+        comment: str = "",
+        filename_postfix: str = "",
+        epochs: int = 5,
+        learning_rate: float = 0.001,
+        dataset_name: str = "BloodCells+Augmentations",
+        drop_rate: float = 0.3,
+        load_from_net: str = "",
+        load_from_checkpoint: str = ""
 ):
+    """
+    Trains the ViT model.
+
+    Args:
+    - depth (int): Depth of the ViT model.
+    - num_heads (int): Number of attention heads.
+    - embed_dim (int): Embedding dimension.
+    - comment (str): Comment to be added to the run name.
+    - filename_postfix (str): Postfix to be added to the saved model filename.
+    - epochs (int): Number of training epochs.
+    - learning_rate (float): Learning rate for the optimizer.
+    - dataset_name (str): Name of the dataset.
+    - drop_rate (float): Dropout rate.
+    - load_from_net (str): Path to a pre-trained model to load weights from.
+    - load_from_checkpoint (str): Path to a checkpoint to resume training from.
+    """
     architecture = f"Vit-D{depth}-H{num_heads}-E{embed_dim}"
     run_name = f"Vit-D{depth}-H{num_heads}-E{embed_dim}{'-' + comment if comment != '' else ''}"
     filename = f"../nets/{run_name}{'-' + filename_postfix if filename_postfix != '' else ''}.pth"
@@ -66,4 +79,6 @@ def train(
     torch.save(model.state_dict(), filename)
 
 
-train(depth=6, embed_dim=128, num_heads=8, comment="SGD", epochs=7, learning_rate=0.0001)
+if __name__ == "__main__":
+    # Example usage
+    train(depth=6, embed_dim=128, num_heads=8, comment="SGD", epochs=7, learning_rate=0.0001)
