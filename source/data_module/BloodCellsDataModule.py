@@ -18,11 +18,10 @@ class BloodCellsDataModule(L.LightningDataModule):
     def __init__(self, data_dir: str = "./"):
         super().__init__()
         self.data_dir = data_dir
-        self.train_transform = A.Compose(  # набор трансформаций для тренировочного набора
+        self.train_transform = A.Compose(
             [
                 A.Resize(width=224, height=224),
-                # добавить несколько трансформаций по своему выбору
-                A.OneOf([  # делает только один вид преобразования из списка
+                A.OneOf([
                     A.Blur(),
                     A.GaussNoise(),
                     A.RandomBrightnessContrast(),
@@ -35,7 +34,7 @@ class BloodCellsDataModule(L.LightningDataModule):
                 ToTensorV2(),
             ]
         )
-        self.test_transform = A.Compose(  # с тестовым набором минимум трансформаций
+        self.test_transform = A.Compose(
             [
                 A.Resize(width=224, height=224),
                 A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
