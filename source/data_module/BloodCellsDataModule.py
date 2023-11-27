@@ -1,5 +1,4 @@
 import os
-
 import lightning as L
 import torch
 import torchvision
@@ -15,7 +14,13 @@ BATCH_SIZE = 128 if torch.cuda.is_available() else 16
 
 
 class BloodCellsDataModule(L.LightningDataModule):
-    def __init__(self, data_dir: str = "./"):
+    def __init__(self, data_dir="./"):
+        """
+        Initializes the BloodCellsDataModule.
+
+        Args:
+        - data_dir (str): Path to the data directory.
+        """
         super().__init__()
         self.data_dir = data_dir
         self.train_transform = A.Compose(
@@ -46,9 +51,20 @@ class BloodCellsDataModule(L.LightningDataModule):
         self.num_classes = 4
 
     def prepare_data(self):
+        """
+        Prepares the dataset.
+
+        This method is responsible for downloading, extracting, and preparing the dataset.
+        """
         pass
 
     def setup(self, stage=None):
+        """
+        Set up the data for training, validation, and testing.
+
+        Args:
+        - stage (str, optional): Stage of training (e.g., 'fit', 'test').
+        """
         classes = ["EOSINOPHIL", "LYMPHOCYTE", "MONOCYTE", "NEUTROPHIL"]
 
         cls = [os.path.join(PATH_DATASETS, "TRAIN", cl) for cl in classes]
@@ -84,12 +100,28 @@ class BloodCellsDataModule(L.LightningDataModule):
         # self.train_dataset, self.val_dataset = torch.utils.data.random_split(train_dataset, [9000, 957])
 
     def train_dataloader(self):
+        """
+        Returns the DataLoader for the training dataset.
+
+        Returns:
+        - torch.utils.data.DataLoader: DataLoader for the training dataset.
+        """
         return torch.utils.data.DataLoader(self.train_dataset, batch_size=BATCH_SIZE)
 
     def val_dataloader(self):
+        """
+        Returns the DataLoader for the validation dataset.
+
+        Returns:
+        - torch.utils.data.DataLoader: DataLoader for the validation dataset.
+        """
         return torch.utils.data.DataLoader(self.test_dataset, batch_size=BATCH_SIZE)
 
     def test_dataloader(self):
+        """
+        Returns the DataLoader for the test dataset.
+
+        Returns:
+        - torch.utils.data.DataLoader: DataLoader for the test dataset.
+        """
         return torch.utils.data.DataLoader(self.test_dataset, batch_size=BATCH_SIZE)
-
-
