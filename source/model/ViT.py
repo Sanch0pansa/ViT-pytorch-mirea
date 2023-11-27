@@ -9,18 +9,42 @@ import lightning as L
 
 from torch.optim.lr_scheduler import StepLR
 
-
 class ViT(L.LightningModule):
-    """ Vision Transformer with support for patch or hybrid CNN input stage
-    """
-    def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000,
-                 embed_dim=768, depth=6, num_heads=12, mlp_ratio=4.,
-                 qkv_bias=False, drop_rate=0., learning_rate=0.00001):
+    """Vision Transformer with support for patch or hybrid CNN input stage"""
+    def __init__(self,
+                 img_size: int = 224,
+                 patch_size: int = 16,
+                 in_chans: int = 3,
+                 num_classes: int = 1000,
+                 embed_dim: int = 768,
+                 depth: int = 6,
+                 num_heads: int = 12,
+                 mlp_ratio: float = 4.0,
+                 qkv_bias: bool = False,
+                 drop_rate: float = 0.0,
+                 learning_rate: float = 0.00001
+                 ):
+        """
+        Initializes the ViT module.
+
+        Args:
+        - img_size (int): Size of the input image.
+        - patch_size (int): Size of each patch.
+        - in_chans (int): Number of input channels.
+        - num_classes (int): Number of output classes.
+        - embed_dim (int): Dimension of the embedding.
+        - depth (int): Number of Transformer blocks.
+        - num_heads (int): Number of attention heads.
+        - mlp_ratio (float): Ratio of the hidden dimension in the MLP.
+        - qkv_bias (bool): Whether to include bias in the attention module.
+        - drop_rate (float): Dropout probability.
+        - learning_rate (float): Learning rate for optimization.
+        """
         super().__init__()
         self.save_hyperparameters()
         self.learning_rate = learning_rate
 
-        # Присвоение переменных
+        # Assign variables
         self.num = (img_size // patch_size) ** 2
 
         # Path Embeddings, CLS Token, Position Encoding
@@ -34,8 +58,16 @@ class ViT(L.LightningModule):
         # Classifier
         self.classifier = nn.Linear(in_features=embed_dim, out_features=num_classes)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass of the ViT module.
 
+        Args:
+        - x (torch.Tensor): Input tensor.
+
+        Returns:
+        - torch.Tensor: Output tensor after passing through the ViT model.
+        """
         # Path Embeddings, CLS Token, Position Encoding
         out = self.embeddings(x)
 
@@ -69,8 +101,15 @@ class ViT(L.LightningModule):
         self.log("val_acc", acc, prog_bar=True)
 
     def configure_optimizers(self):
-        # optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, betas=(0.5, 0.999))
-        optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
+        """
+        Configures the optimizer and scheduler for training.
 
-        scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
-        return [optimizer], [scheduler]
+        Returns:
+        - torch.optim.Optimizer: Optimizer for training.
+        """
+        return torch.optim.Adam(self.parameters(), lr=self.learning_rate, betas=(0.5, 0.999))
+
+        # Example with SGD optimizer and StepLR scheduler
+        # optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
+        # scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
+        # return {'optimizer': optimizer, 'lr_scheduler': scheduler, 'monitor': 'val_loss'}

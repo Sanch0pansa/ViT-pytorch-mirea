@@ -12,9 +12,23 @@ def get_positional_embeddings(sequence_length, d):
     return result
 
 class PatchEmbedding(nn.Module):
-    """ Image to Patch Embedding
-    """
-    def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768):
+    """Image to Patch Embedding"""
+    def __init__(self,
+                 img_size: int = 224,
+                 patch_size: int = 16,
+                 in_chans: int = 3,
+                 embed_dim: int = 768
+                 ):
+        """
+        Initializes the PatchEmbedding module.
+
+        Args:
+        - img_size (int): Size of the input image.
+        - patch_size (int): Size of each patch.
+        - in_chans (int): Number of input channels.
+        - embed_dim (int): Dimension of the embedding.
+
+        """
         super().__init__()
 
         self.patch_embeddings = nn.Sequential(
@@ -27,7 +41,15 @@ class PatchEmbedding(nn.Module):
         self.cls_token = nn.Parameter(torch.randn(1, 1, embed_dim))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass of the PatchEmbedding module.
 
+        Args:
+        - x (torch.Tensor): Input tensor.
+
+        Returns:
+        - torch.Tensor: Output tensor after patch embedding.
+        """
         patches = self.patch_embeddings(x)
         patches = torch.cat((patches, repeat(self.cls_token, '() n e -> b n e', b=x.shape[0])), dim=1)
         patches += repeat(self.position_embeddings, '() n e -> b n e', b=x.shape[0])
