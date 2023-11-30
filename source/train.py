@@ -3,7 +3,7 @@ import lightning as L
 from source.data_module.BloodCellsDataModule import BloodCellsDataModule
 from source.model.ViT import ViT
 from lightning.pytorch.callbacks import ModelCheckpoint
-add import hydra
+import hydra
 from hydra.core.config_store import ConfigStore
 from source.conf.config import Params
 
