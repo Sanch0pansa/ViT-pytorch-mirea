@@ -1,0 +1,7 @@
+name: "Vit-D3-H8-E128"
+num_classes: 4
+depth: 3
+embed_dim: 128
+num_heads: 8
+drop_rate: 0.3
+mlp_ratio: 4

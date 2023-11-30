@@ -1,0 +1,6 @@
+batch_size: 128
+batch_size_cpu: 128
+epochs: 15
+learning_rate: 0.001
+optimizer: "Adam"
+scheduler: "OneCycleLR"

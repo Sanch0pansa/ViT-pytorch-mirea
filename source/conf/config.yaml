@@ -1,0 +1,4 @@
+defaults:
+  - model: ViT-D3-H8-E128
+  - data: dataset-aug-8
+  - training: one-cycle-lr-scheduler
