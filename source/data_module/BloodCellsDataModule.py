@@ -2,6 +2,8 @@ import os
 import lightning as L
 import torch
 import torchvision
+import random
+import numpy as np
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import cv2
@@ -9,12 +11,18 @@ from source.data_module.BloodCellsDataset import BloodCellsDataset
 
 # Note - you must have torchvision installed for this example
 
-PATH_DATASETS = os.environ.get("PATH_DATASETS", "./data/data")
-BATCH_SIZE = 128 if torch.cuda.is_available() else 16
+# PATH_DATASETS = os.environ.get("PATH_DATASETS", "./data/data")
+# BATCH_SIZE = 128 if torch.cuda.is_available() else 16
 
 
 class BloodCellsDataModule(L.LightningDataModule):
-    def __init__(self, data_dir="./"):
+    def __init__(self,
+                 data_dir: str = "./",
+                 seed: int = 1000,
+                 batch_size: int = 128,
+                 batch_size_cpu: int = 128,
+                 augmentation_ratio: int = 4,
+                 ):
         """
         Initializes the BloodCellsDataModule.
 
@@ -47,8 +55,19 @@ class BloodCellsDataModule(L.LightningDataModule):
             ]
         )
 
-        self.dims = (3, 32, 32)
-        self.num_classes = 4
+        self.batch_size = batch_size if torch.cuda.is_available() else batch_size_cpu
+        self.seed = seed
+        self.augmentation_ratio = augmentation_ratio
+
+    def len_of_train_dataset(self):
+        classes = ["EOSINOPHIL", "LYMPHOCYTE", "MONOCYTE", "NEUTROPHIL"]
+
+        cls = [os.path.join(self.data_dir, "TRAIN", cl) for cl in classes]
+        images_filepaths = []
+        [images_filepaths.extend(sorted([os.path.join(cls[i], f) for f in os.listdir(cls[i])])) for i in
+         range(len(classes))]
+        correct_train_images_filepaths = [i for i in images_filepaths if cv2.imread(i) is not None]
+        return (len(correct_train_images_filepaths) - 1000) * self.augmentation_ratio
 
     def prepare_data(self):
         """
@@ -65,15 +84,19 @@ class BloodCellsDataModule(L.LightningDataModule):
         Args:
         - stage (str, optional): Stage of training (e.g., 'fit', 'test').
         """
+        random.seed(self.seed)
+        np.random.seed(self.seed)
+        torch.manual_seed(self.seed)
+
         classes = ["EOSINOPHIL", "LYMPHOCYTE", "MONOCYTE", "NEUTROPHIL"]
 
-        cls = [os.path.join(PATH_DATASETS, "TRAIN", cl) for cl in classes]
+        cls = [os.path.join(self.data_dir, "TRAIN", cl) for cl in classes]
         images_filepaths = []
         [images_filepaths.extend(sorted([os.path.join(cls[i], f) for f in os.listdir(cls[i])])) for i in
          range(len(classes))]
         correct_train_images_filepaths = [i for i in images_filepaths if cv2.imread(i) is not None]
 
-        cls = [os.path.join(PATH_DATASETS, "TEST", cl) for cl in classes]
+        cls = [os.path.join(self.data_dir, "TEST", cl) for cl in classes]
         images_filepaths = []
         [images_filepaths.extend(sorted([os.path.join(cls[i], f) for f in os.listdir(cls[i])])) for i in
          range(len(classes))]
@@ -86,7 +109,7 @@ class BloodCellsDataModule(L.LightningDataModule):
                                           transform=self.train_transform)
         # Augmented datasets
         augmented_datasets = []
-        for _ in range(7):  # You can adjust the number of augmentations as needed
+        for _ in range(self.augmentation_ratio - 1):  # You can adjust the number of augmentations as needed
             augmented_datasets.append(
                 BloodCellsDataset(images_filepaths=correct_train_images_filepaths,
                                   transform=self.train_transform)
@@ -95,7 +118,6 @@ class BloodCellsDataModule(L.LightningDataModule):
         # Concatenate datasets
         train_dataset = torch.utils.data.ConcatDataset([train_dataset] + augmented_datasets)
         self.val_dataset, self.train_dataset = torch.utils.data.random_split(train_dataset, [1000, len(train_dataset) - 1000])
-        print(len(self.train_dataset))
 
         # self.train_dataset, self.val_dataset = torch.utils.data.random_split(train_dataset, [9000, 957])
 
@@ -106,7 +128,7 @@ class BloodCellsDataModule(L.LightningDataModule):
         Returns:
         - torch.utils.data.DataLoader: DataLoader for the training dataset.
         """
-        return torch.utils.data.DataLoader(self.train_dataset, batch_size=BATCH_SIZE)
+        return torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size)
 
     def val_dataloader(self):
         """
@@ -115,7 +137,7 @@ class BloodCellsDataModule(L.LightningDataModule):
         Returns:
         - torch.utils.data.DataLoader: DataLoader for the validation dataset.
         """
-        return torch.utils.data.DataLoader(self.test_dataset, batch_size=BATCH_SIZE)
+        return torch.utils.data.DataLoader(self.test_dataset, batch_size=self.batch_size)
 
     def test_dataloader(self):
         """
@@ -124,4 +146,4 @@ class BloodCellsDataModule(L.LightningDataModule):
         Returns:
         - torch.utils.data.DataLoader: DataLoader for the test dataset.
         """
-        return torch.utils.data.DataLoader(self.test_dataset, batch_size=BATCH_SIZE)
+        return torch.utils.data.DataLoader(self.test_dataset, batch_size=self.batch_size)
