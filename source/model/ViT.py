@@ -8,6 +8,10 @@ from source.model.PatchEmbedding import PatchEmbedding
 import lightning as L
 
 from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import OneCycleLR
+from torch.optim import Adam
+from torch.optim import SGD
+
 
 class ViT(L.LightningModule):
     """Vision Transformer with support for patch or hybrid CNN input stage"""
@@ -22,7 +26,11 @@ class ViT(L.LightningModule):
                  mlp_ratio: float = 4.0,
                  qkv_bias: bool = False,
                  drop_rate: float = 0.0,
-                 learning_rate: float = 0.00001
+                 learning_rate: float = 0.00001,
+                 optimizer: str = "Adam",
+                 lr_scheduler: str | None = "StepLR",
+                 epochs: int = 7,
+                 data_loader_len: int = 1000,
                  ):
         """
         Initializes the ViT module.
@@ -39,6 +47,10 @@ class ViT(L.LightningModule):
         - qkv_bias (bool): Whether to include bias in the attention module.
         - drop_rate (float): Dropout probability.
         - learning_rate (float): Learning rate for optimization.
+        - optimizer (str): Optimizer type.
+        - lr_scheduler (str | None): Learning rate scheduler type.
+        - epochs (int): Number of epochs
+        - data_loader_len (int): Steps per one epoch.
         """
         super().__init__()
         self.save_hyperparameters()
@@ -57,6 +69,14 @@ class ViT(L.LightningModule):
 
         # Classifier
         self.classifier = nn.Linear(in_features=embed_dim, out_features=num_classes)
+
+        # Optimizer and Learning rate scheduler
+        self.optimizer_type = optimizer
+        self.lr_scheduler_type = lr_scheduler
+
+        # Training parameters
+        self.epochs = epochs
+        self.data_loader_len = data_loader_len
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -106,8 +126,28 @@ class ViT(L.LightningModule):
 
         Returns:
         - torch.optim.Optimizer: Optimizer for training.
+        - torch.optim.lr_scheduler.Scheduler: Learning rate scheduler.
         """
-        return torch.optim.Adam(self.parameters(), lr=self.learning_rate, betas=(0.5, 0.999))
+
+        optimizer = None
+        lr_scheduler = None
+        if not self.optimizer_type and not self.lr_scheduler_type:
+            return None
+
+        if self.optimizer_type == "Adam":
+            optimizer = Adam(self.parameters(), lr=self.learning_rate, betas=(0.5, 0.999))
+        elif self.optimizer_type == "SGD":
+            optimizer = SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
+
+        if self.lr_scheduler_type == "StepLR":
+            lr_scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
+        elif self.lr_scheduler_type == "OneCycleLR":
+            lr_scheduler = OneCycleLR(optimizer, max_lr=0.01, steps_per_epoch=self.data_loader_len, epochs=self.epochs)
+
+        if lr_scheduler:
+            return [optimizer], [lr_scheduler]
+        else:
+            return optimizer
 
         # Example with SGD optimizer and StepLR scheduler
         # optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
